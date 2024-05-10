@@ -1,7 +1,7 @@
 
-# Torch-SISSO
+# TorchSISSO
 
-Implementation of Sure Independence Screening and Sparsifying Operator (SISSO) algorithm in python using PyTorch.
+Implementation of Sure Independence Screening and Sparsifying Operator (SISSO) algorithm in Python using PyTorch.
 
 # SISSO
 
