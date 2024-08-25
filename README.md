@@ -30,7 +30,6 @@ pip install TorchSisso
 ```
 
 # Usage Examples
-Usage of TorchSisso can be found in   <a href="https://github.com/PaulsonLab/TorchSISSO/blob/main/Test_Regressor_SISSO.ipynb">
-  <img src="https://colab.research.google.com/drive/1q0TEEALkb1PzJuusGKyHphv7tfod66XA?usp=sharing" alt="Open In Colab"/>
+Usage of TorchSisso can be found in   <a href="https://colab.research.google.com/drive/1q0TEEALkb1PzJuusGKyHphv7tfod66XA?usp=sharing">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
-
