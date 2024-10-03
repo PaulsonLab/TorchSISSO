@@ -37,7 +37,7 @@ sm = SissoModel(df= df #Takes the dataframe as input with first variable as targ
                 n_term = 1 #Defines the number of terms in the final equation
                 k = 20 #Defines the number of SIS features to be screened for $L_0$ regularization
                 initial_screening = ["mi" or "spearman", quantile value] #Defines the feature screening option for high dimensional and 1-quantile_value defines
-                                                                          the features within this quantile range should be kept for feature expansion.
+                                                                          #the features within this quantile range should be kept for feature expansion.
                 use_gpu = True or False #Defines the flag whether to consider GPU or not (For efficient computation we consider using GPU only for $L_0$ Regularization.
                 dimensionality = ['u1','u2','u3'] #Defines the units of the feature variables in string representation which later converted into sympy format to do the                                                         meaningful feature construction.
                 relational_units = [('u3','u1*u2')] #Defines the list of tuples where each tuple represents the relational transformation.
