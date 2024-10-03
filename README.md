@@ -1,7 +1,6 @@
+#  <p align="center">TorchSISSO: A PyTorch-Based Implementation of the Sure Independence Screening and Sparsifying Operator (SISSO) for Efficient and Interpretable Model Discovery
 
-# TorchSISSO
-
-Implementation of Sure Independence Screening and Sparsifying Operator (SISSO) algorithm in Python using PyTorch.
+![torchsisso3](https://github.com/user-attachments/assets/a8d52ec3-3470-4807-904a-52525dc2b5d0)
 
 # SISSO
 
