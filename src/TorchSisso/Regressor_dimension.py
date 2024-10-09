@@ -17,7 +17,7 @@ import pdb
 
 class Regressor:
     
-    def __init__(self,x,y,names,dimensionality,dimension=None,sis_features=10,device='cpu',output_dim=None,screening=None):
+    def __init__(self,x,y,names,dimensionality,dimension=None,sis_features=10,device='cpu',output_dim=None,screening=None,use_gpu=False):
 
         '''
         ###################################################################################################################
@@ -35,6 +35,10 @@ class Regressor:
         ###################################################################################################################
         '''
         self.device = device
+        
+        if use_gpu:
+            
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.x = x.to(self.device)
         
@@ -325,7 +329,7 @@ class Regressor:
             
             
         #Looping over the dimensions
-        
+        final_equations=[]
         for i in range(1,self.dimension+1):
             
             if i ==1:
@@ -414,6 +418,7 @@ class Regressor:
                     print('R2::',r2)
                 #print('Time taken to generate one dimensional equation: ', time.time()-start_1D,'seconds')
                 if self.device == 'cuda':torch.cuda.empty_cache()
+                final_equations.append(equation)
                 
                 
                 
@@ -436,10 +441,13 @@ class Regressor:
                         
                         equation = equation + (str(terms[k])) + '  '
 
-                print('Equation: ',equation[:len(equation)-1])
-                print('\n')
+                
+                
+                if intercept>0: equation = equation +'+'+ str(float(intercept))
+                
+                else: equation = equation + str(float(intercept))
 
-                print('Intercept:', float(intercept))
+                print('Equation: ',equation[:len(equation)-1])
                 print('\n')
 
                 print('RMSE:',float(rmse))
@@ -450,7 +458,8 @@ class Regressor:
                 print(f'Time taken for {i} dimension is: ', time.time()-start)
                 
                 if self.device == 'cuda': torch.cuda.empty_cache()
+                final_equations.append(equation)
                 
                 
 
-        return float(rmse),equation,r2
+        return float(rmse),equation,r2,final_equations

@@ -26,27 +26,60 @@ from sklearn.model_selection import train_test_split
 
 
 
-class sisso_model:
+class SissoModel:
 
-  def __init__(self,df,operators=None,multi_task = None,no_of_operators=None,dimension=None,sis_features=20,device='cpu',relational_units = None,initial_screening = None,dimensionality=None,output_dim = None,regressor_screening = None):
+  def __init__(self,data,operators=None,multi_task = None,n_expansion=None,n_term=None,k=20,device='cpu',use_gpu = False,
+               relational_units = None,initial_screening = None,dimensionality=None,output_dim = None,
+               regressor_screening = None,custom_unary_functions = None ,custom_binary_functions=None):
 
     self.operators = operators
-    self.df=df
-    self.no_of_operators = no_of_operators
+    
+    if self.operators == None: sys.exit('!! Please provide the valid operator set!!')
+    
+    self.df=data
+
+    self.no_of_operators = n_expansion
+    
+    if self.no_of_operators == None: 
+        
+        print('!! Warning:: Number of feature expansions is not provided, considering default configuration!! \n')
+        
+        self.no_of_operators = 3
+        
     self.device = device
-    if dimension == None: self.dimension = 3#dimension
-    else: self.dimension = dimension
-    if sis_features == None: self.sis_features = 10
-    else: self.sis_features = sis_features
+    
+    if n_term == None: 
+        
+        print('Warning:: Number of terms in equation is not provided, considering default configuration..!! \n')
+        
+        self.dimension = 3
+        
+    else: self.dimension = n_term
+        
+    else: self.sis_features = k
+    
     self.relational_units = relational_units
+    
     self.initial_screening = initial_screening
+    
     self.dimensionality = dimensionality
+    
     self.output_dim = output_dim
+    
     self.regressor_screening = regressor_screening
     
+    self.use_gpu = use_gpu
+    
+    self.custom_unary_functions = custom_unary_functions
+    
+    self.custom_binary_functions = custom_binary_functions
+    
     self.multi_task = multi_task
+    
     if multi_task!=None:
+        
         self.multi_task_target = multi_task[0]
+        
         self.multi_task_features = multi_task[1]
     
 
@@ -61,7 +94,7 @@ class sisso_model:
             
             print('Performing MultiTask Symbolic regression!!..')
             
-            equations =[]
+            equations,rmses,r2s =[],[],[]
             
             for i in range(len(self.multi_task_target)):
                 
@@ -75,29 +108,36 @@ class sisso_model:
                 df1 = self.df.iloc[:,list1]
                 
                 
-                x,y,names = fc.feature_space_construction(self.operators,df1,self.no_of_operators,self.device,self.initial_screening).feature_space()
+                x,y,names = fc.feature_space_construction(self.operators,df1,self.no_of_operators,self.device,self.initial_screening,self.custom_unary_functions,self.custom_binary_functions).feature_space()
                     
-                from Regressor import Regressor
+                from .Regressor import Regressor
                   
-                rmse, equation,r2 =  Regressor(x,y,names,self.dimension,self.sis_features,self.device).regressor_fit()
+                rmse, equation,r2,final_eq =  Regressor(x,y,names,self.dimension,self.sis_features,self.device,self.use_gpu).regressor_fit()
                 
-                equations.append(equation)
+                equations.append(final_eq)
+                
+                rmses.append(rmse)
+                
+                r2s.append(r2)
                     
                 if i+1 == len(self.multi_task_target):
+                    
                     print('Equations found::',equations)
-                    return rmse, equation, r2,equations
+                    
+                    return rmses, equations, r2s
+                
                 else: continue
                 
         
         else:
             
-            x,y,names = fc.feature_space_construction(self.operators,self.df,self.no_of_operators,self.device,self.initial_screening).feature_space()
+            x,y,names = fc.feature_space_construction(self.operators,self.df,self.no_of_operators,self.device,self.initial_screening,self.custom_unary_functions,self.custom_binary_functions).feature_space()
             
-            from Regressor import Regressor
+            from .Regressor import Regressor
             
-            rmse, equation,r2 =  Regressor(x,y,names,self.dimension,self.sis_features,self.device).regressor_fit()
+            rmse, equation,r2,final_eq =  Regressor(x,y,names,self.dimension,self.sis_features,self.device,self.use_gpu).regressor_fit()
         
-            return rmse, equation, r2
+            return rmse, equation, r2,final_eq
   
     else: 
         
@@ -105,7 +145,7 @@ class sisso_model:
             
             print('************************************************ Performing MultiTask Symbolic regression!!..************************************************ \n')
             
-            equations =[]
+            equations,rmses,r2s =[],[],[]
             
             for i in range(len(self.multi_task_target)):
                 
@@ -123,17 +163,22 @@ class sisso_model:
                 x,y,names,dim = dfc.feature_space_construction(self.df,self.operators,self.relational_units,self.initial_screening,self.no_of_operators,self.device,self.dimensionality).feature_expansion()
                     
                     #print(names)
-                from Regressor_dimension import Regressor
+                from .Regressor_dimension import Regressor
                     
-                rmse,equation,r2 = Regressor(x,y,names,dim,self.dimension,self.sis_features,self.device,self.output_dim,self.regressor_screening).regressor_fit()
+                rmse,equation,r2 = Regressor(x,y,names,dim,self.dimension,self.sis_features,self.device,self.output_dim,self.regressor_screening,self.use_gpu).regressor_fit()
                     
                 equations.append(equation)
+                
+                rmses.append(rmse)
+                
+                r2s.append(r2)
+                    
                     
                 if i+1 == len(self.multi_task_target):
                         
                     print('Equations found::',equations)
                         
-                    return rmse, equation, r2,equations
+                    return rmses, equations, r2s
                     
                 else: continue
                 
@@ -144,8 +189,9 @@ class sisso_model:
             x,y,names,dim = dfc.feature_space_construction(self.df,self.operators,self.relational_units,self.initial_screening,self.no_of_operators,self.device,self.dimensionality).feature_expansion()
             
             #print(names)
-            from Regressor_dimension import Regressor
-            rmse,equation,r2 = Regressor(x,y,names,dim,self.dimension,self.sis_features,self.device,self.output_dim,self.regressor_screening).regressor_fit()
+            from .Regressor_dimension import Regressor
+            
+            rmse,equation,r2 = Regressor(x,y,names,dim,self.dimension,self.sis_features,self.device,self.output_dim,self.regressor_screening,self.use_gpu).regressor_fit()
             
             return rmse,equation,r2
 

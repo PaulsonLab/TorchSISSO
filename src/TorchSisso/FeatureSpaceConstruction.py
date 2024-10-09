@@ -12,6 +12,7 @@ import warnings
 import itertools
 import time
 from itertools import combinations
+from . import combinations_construction
 
 class feature_space_construction:
 
@@ -22,7 +23,7 @@ class feature_space_construction:
 
   ##############################################################################################################
   '''
-  def __init__(self,operators,df,no_of_operators=None,device='cpu',initial_screening=None,metrics=[0.06,0.995]):
+  def __init__(self,operators,df,no_of_operators=None,device='cpu',initial_screening=None,custom_unary_functions=None,custom_binary_functions=None):
 
     print(f'************************************************ Starting Feature Space Construction in {device} ************************************************ \n')
     print('\n')
@@ -66,6 +67,7 @@ class feature_space_construction:
     
     # Pop out the Targer variable of the problem and convert to tensor
     self.df.rename(columns = {f'{self.df.columns[0]}':'Target'},inplace=True)
+    
     self.Target_column = torch.tensor(self.df.pop('Target')).to(self.device)
     
     
@@ -81,6 +83,7 @@ class feature_space_construction:
 
     # Create the feature values tensor
     self.df_feature_values = torch.tensor(self.df.values).to(self.device)
+    
     self.columns = self.df.columns.tolist()
 
     #Create a dataframe for appending new datavalues
@@ -88,16 +91,19 @@ class feature_space_construction:
 
     #Creating empty tensor and list for single operators (Unary operators)
     self.feature_values_unary = torch.empty(self.df.shape[0],0).to(self.device)
+    
     self.feature_names_unary = []
 
     #creating empty tensor and list for combinations (Binary Operators)
     self.feature_values_binary = torch.empty(self.df.shape[0],0).to(self.device)
+    
     self.feature_names_binary = []
     
-    #Metrics
-    self.rmse_metric = metrics[0]
-    self.r2_metric = metrics[1]
-    self.metrics = metrics
+    self.custom_unary_functions = custom_unary_functions
+    
+    self.custom_binary_functions = custom_binary_functions
+    
+    
 
   '''
   ###############################################################################################################
@@ -136,11 +142,56 @@ class feature_space_construction:
         
         return df_screening1
     
+  def construct_function(self,functions_tuple, var):
+      
+    result = var  # Start with the input variable
+    text1 = ''  # Initialize text1 as an empty string
+    text2 = ''  # Initialize text2 as an empty string
     
+    for func in functions_tuple:
+        # Check for power function of the form pow(n)
+        if func.startswith('pow'):
+            # Extract the power value inside parentheses
+            power_value = int(re.search(r'pow\((\d+)\)', func).group(1))
+            result = result ** power_value  # Use ** for power operation
+            text2 = f")**{power_value}" + text2
+            text1 = "(" + text1
+        # Check if the function has a negative sign
+        elif func.startswith('-'):
+            func_name = func[1:]  # Remove the negative sign
+            result = -getattr(torch, func_name)(result)  # Apply the function with a negative sign
+            text1 = f"-{getattr(torch, func_name).__name__}(" + text1
+            text2 = ")" + text2
+        else:
+            result = getattr(torch, func)(result)  # Apply the function normally
+            text1 = f"{getattr(torch, func).__name__}(" + text1
+            text2 = ")" + text2
+
+    return result, text1, text2  
+
+
   def single_variable(self,operators_set,i):
 
 
     #Looping over operators set to get the new features/predictor variables
+    
+    if len(operators_set)==0 and self.custom_unary_functions!=None:
+        
+        for func in self.custom_unary_functions:
+            
+            self.feature_values_11 = torch.empty(self.df.shape[0],0).to(self.device)
+            
+            feature_names_12 =[]
+            
+            self.feature_values_11,t1,t2 = self.construct_function(func,self.df_feature_values)
+            
+            feature_names_12.extend(list(map(lambda x: str(t1) +x + str(t2), self.columns)))
+            
+            self.feature_values_unary = torch.cat((self.feature_values_unary,self.feature_values_11),dim=1)
+            
+            self.feature_names_unary.extend(feature_names_12)
+
+            del self.feature_values_11, feature_names_12
 
     for op in operators_set:
 
@@ -237,9 +288,19 @@ class feature_space_construction:
             div2 = self.df_feature_values/2
             self.feature_values_11 = torch.cat((self.feature_values_11,div2),dim=1)
             feature_names_12.extend(list(map(lambda x: '('+x + "/2)", self.columns)))
+            
+        elif self.custom_unary_functions!=None:
+            
+            for func in self.custom_functions:
+                
+                
+                self.feature_values_11,t1,t2 = self.construct_function(func,self.df_feature_values_11)
+                
+                feature_names_12.extend(list(map(lambda x: str(t1) +x + str(t2), self.columns)))
         
 
         self.feature_values_unary = torch.cat((self.feature_values_unary,self.feature_values_11),dim=1)
+        
         self.feature_names_unary.extend(feature_names_12)
 
         del self.feature_values_11, feature_names_12
@@ -290,7 +351,24 @@ class feature_space_construction:
   ################################################################################################
   '''
   def combinations(self,operators_set,i):
-
+      
+      
+      if len(operators_set)==0 and self.custom_binary_functions!=None:
+          
+          self.feature_values11 = torch.empty(self.df.shape[0],0).to(self.device)
+          feature_names_11 = []
+          
+          constructor = FeatureConstructor(self.df_feature_values, self.columns)
+          
+          results, expressions = constructor.construct_generic_features(self.custom_binary_functions)
+          self.feature_values11 = torch.cat((self.feature_values11,results),dim=1)
+          feature_names_11.extend(expressions)
+          self.feature_values_binary = torch.cat((self.feature_values_binary,self.feature_values11),dim=1)
+          self.feature_names_binary.extend(feature_names_11)
+          del self.feature_values11,feature_names_11
+          
+          
+          
       for op in operators_set:
           s = time.time()
           #getting list of cobinations without replacement using itertools
@@ -306,6 +384,8 @@ class feature_space_construction:
           del comb_tensor,combinations2 #Deleting to release the memory
           self.feature_values11 = torch.empty(self.df.shape[0],0).to(self.device)
           feature_names_11 = []
+          
+          
 
           # Performs the addition transformation of feature space with the combinations generated
           if op =='+':
@@ -333,7 +413,15 @@ class feature_space_construction:
               mul = torch.multiply(x_p[:,:,0],x_p[:,:,1]).T
               self.feature_values11 = torch.cat((self.feature_values11,mul),dim=1)
               feature_names_11.extend(list(map(lambda comb: '('+'*'.join(comb)+')', combinations1)))
-
+        
+          elif self.custom_binary_functions!=None:
+              
+              constructor = FeatureConstructor(self.df_feature_values, self.columns)
+              
+              results, expressions = constructor.construct_generic_features(self.custom_binary_functions)
+              self.feature_values11 = torch.cat((self.feature_values11,results),dim=1)
+              feature_names_11.extend(expressions)
+              
           self.feature_values_binary = torch.cat((self.feature_values_binary,self.feature_values11),dim=1)
           self.feature_names_binary.extend(feature_names_11)
           del self.feature_values11,feature_names_11
