@@ -58,7 +58,7 @@ sm = SissoModel(df= df #Takes the dataframe as input with first variable as targ
                 )
 
 # Run the SISSO algorithm to get the interpretable model with the highest accuracy
-rmse, equation, r2 = sm.fit()
+rmse, equation, r2,_ = sm.fit()
 ```
 
 
@@ -71,3 +71,8 @@ About
 ------
 Created and maintained by Madhav Muthyala. Please feel free to open issues in the Github or contact Madhav  
 (muthyala.7@osu.edu) in case of any problems/comments/suggestions in using the code. 
+
+**Known Limitations and Future Work**
+-----------------------------------
+
+We are aware of current limitations in the code and are actively working on addressing them in future updates. If you encounter any issues or have suggestions for improvements, please feel free to report them. Your feedback is valuable and helps us enhance the project.
