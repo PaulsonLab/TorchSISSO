@@ -6,7 +6,7 @@
 
 The **Sure Independence Screening and Sparsifying Operator (SISSO)** is a symbolic regression (SR) method that searches for interpretable models by exploring large feature spaces. It has proven particularly effective in fields like materials science, where it helps to uncover simple, accurate models that describe complex physical phenomena.
 
-**TorchSISSO [PAPER](https://arxiv.org/abs/2410.01752)** is a native Python implementation of SISSO, built using the PyTorch framework. It addresses the limitations of the original FORTRAN-based SISSO [SISSO](https://github.com/rouyang2017/SISSO) by providing a faster, more flexible, and easier-to-use solution.
+**[TorchSISSO](https://arxiv.org/abs/2410.01752)** is a native Python implementation of SISSO, built using the PyTorch framework. It addresses the limitations of the original FORTRAN-based [SISSO](https://github.com/rouyang2017/SISSO) by providing a faster, more flexible, and easier-to-use solution.
 
 
 ## Installation
@@ -76,3 +76,17 @@ Created and maintained by Madhav Muthyala. Please feel free to open issues in th
 -----------------------------------
 
 We are aware of current limitations in the code and are actively working on addressing them in future updates. If you encounter any issues or have suggestions for improvements, please feel free to report them. Your feedback is valuable and helps us enhance the project.
+
+**Citation**
+-----------------------------------
+```
+@misc{
+      title={TorchSISSO: A PyTorch-Based Implementation of the Sure Independence Screening and Sparsifying Operator for Efficient and Interpretable Model Discovery}, 
+      author={Madhav Muthyala and Farshud Sorourifar and Joel A. Paulson},
+      year={2024},
+      eprint={2410.01752},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2410.01752}, 
+}
+```
