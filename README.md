@@ -42,7 +42,7 @@ sm = SissoModel(df= df #Takes the dataframe as input with first variable as targ
                                                                           #the features within this quantile range should be kept for feature expansion.
                 use_gpu = True or False #Defines the flag whether to consider GPU or not (For efficient computation we consider using GPU only for $L_0$ Regularization.
                 dimensionality = ['u1','u2','u3'] #Defines the units of the feature variables in string representation which later converted into sympy format to do the                                                         meaningful feature construction.
-                relational_units = [(symbols('u1')*symbols('u2'),symbols('u3)] #Defines the list of tuples where each tuple represents the relational transformation.
+                relational_units = [(symbols('u1')*symbols('u2'),symbols('u3')] #Defines the list of tuples where each tuple represents the relational transformation.
                 output_dim = (symbols('u1')*symbols('u1')) #Defines the units of the target variable which helps in narrowing down the space for Regularization.
                 custom_unary_functions = [('cos', '-sin', 'exp', 'pow(2)'), ('tanh', 'pow(2)','sin')] #list of tuples (Note only torch supported functions can be customized)
                 custom_binary_functions = [
