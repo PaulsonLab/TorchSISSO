@@ -26,7 +26,6 @@ import sympy
 from sympy import symbols
 
 # create dataframe composed of targets "y" and primary features "X"
-data = np.column_stack((y, X))
 df = pd.DataFrame(data)
 
 #define unary and binary operators of interest
