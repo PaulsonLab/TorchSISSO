@@ -13,6 +13,8 @@ import itertools
 import time
 from itertools import combinations
 from . import combinations_construction
+import re
+from .combinations_construction import FeatureConstructor
 
 class feature_space_construction:
 
