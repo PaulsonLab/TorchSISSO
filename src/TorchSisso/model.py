@@ -56,7 +56,7 @@ class SissoModel:
         
     else: self.dimension = n_term
         
-    else: self.sis_features = k
+    self.sis_features = k
     
     self.relational_units = relational_units
     
