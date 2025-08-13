@@ -69,7 +69,7 @@ Usage of TorchSisso can be found in   <a href="https://colab.research.google.com
 About
 ------
 Created and maintained by Madhav Muthyala. Please feel free to open issues in the Github or contact Madhav  
-(muthyala.7@osu.edu) in case of any problems/comments/suggestions in using the code. 
+(muthyala.7@osu.edu/mmuthyala@wisc.edu) in case of any problems/comments/suggestions in using the code. 
 
 **Known Limitations and Future Work**
 -----------------------------------
