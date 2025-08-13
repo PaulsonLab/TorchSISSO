@@ -21,7 +21,7 @@ import pandas as pd
 import time
 from sympy import symbols
 from sklearn.model_selection import train_test_split
-
+import re
 
 
 
@@ -56,7 +56,7 @@ class SissoModel:
         
     else: self.dimension = n_term
         
-    else: self.sis_features = k
+    self.sis_features = k
     
     self.relational_units = relational_units
     
@@ -196,3 +196,52 @@ class SissoModel:
             return rmse,equation,r2
 
 
+  def evaluate(self,equation, df_test, custom_functions=None):
+    # Register columns from df_test as global variables
+    for col in df_test.columns:
+        globals()[col] = df_test[col]
+
+    # Register custom functions if provided
+    if custom_functions:
+        for name, func in custom_functions.items():
+            globals()[name] = func
+
+    # Substitute standard functions with numpy equivalents
+    equation = re.sub(r'\bexp\b', 'np.exp', equation)
+    equation = re.sub(r'\bcos\b', 'np.cos', equation)
+    equation = re.sub(r'\bsin\b', 'np.sin', equation)
+    equation = re.sub(r'\btan\b', 'np.tan', equation)
+    equation = re.sub(r'\bcsc\b', '1/np.sin', equation)
+    equation = re.sub(r'\bsec\b', '1/np.cos', equation)
+    equation = re.sub(r'\bcot\b', '1/np.tan', equation)
+
+    equation = re.sub(r'\basin\b', 'np.arcsin', equation)
+    equation = re.sub(r'\bacos\b', 'np.arccos', equation)
+    equation = re.sub(r'\batan\b', 'np.arctan', equation)
+    equation = re.sub(r'\bacsc\b', '1/np.arcsin', equation)
+    equation = re.sub(r'\basec\b', '1/np.arccos', equation)
+    equation = re.sub(r'\bacot\b', '1/np.arctan', equation)
+
+    equation = re.sub(r'\bsinh\b', 'np.sinh', equation)
+    equation = re.sub(r'\bcosh\b', 'np.cosh', equation)
+    equation = re.sub(r'\btanh\b', 'np.tanh', equation)
+    equation = re.sub(r'\bcsch\b', '1/np.sinh', equation)
+    equation = re.sub(r'\bsech\b', '1/np.cosh', equation)
+    equation = re.sub(r'\bcoth\b', '1/np.tanh', equation)
+
+    equation = re.sub(r'\basinh\b', 'np.arcsinh', equation)
+    equation = re.sub(r'\bacosh\b', 'np.arccosh', equation)
+    equation = re.sub(r'\batanh\b', 'np.arctanh', equation)
+
+    equation = re.sub(r'\babs\b', 'np.abs', equation)
+    equation = re.sub(r'\blog\b', 'np.log10', equation)
+    equation = re.sub(r'\bln\b', 'np.log', equation)
+
+    
+    try:
+        p = eval(equation)
+    except Exception as e:
+        print(f"Error evaluating equation: {e}")
+        return None, equation
+
+    return p, equation

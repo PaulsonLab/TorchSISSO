@@ -14,4 +14,8 @@ from .Regressor_dimension import Regressor
 
 from .DimensionalFeatureSpaceConstruction import feature_space_construction
 
+from .combinations_construction import FeatureConstructor
+
 from .model import SissoModel
+
+

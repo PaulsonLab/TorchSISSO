@@ -13,6 +13,7 @@ import itertools
 import time
 from itertools import combinations
 from . import combinations_construction
+from . import unary_construction
 
 class feature_space_construction:
 
@@ -54,7 +55,7 @@ class feature_space_construction:
 
     # Filter the dataframe by removing the categorical datatypes and zero variance feature variables
 
-    self.df = self.df.select_dtypes(include=['float64','int64'])
+    self.df = self.df.select_dtypes(include=['float64','int64','int32','float32'])
 
     # Compute the variance of each column
     variance = self.df.var()
@@ -140,34 +141,7 @@ class feature_space_construction:
         df_screening1 = df_sub.loc[:,filtered_df['Feature variables'].tolist()]
         
         
-        return df_screening1
-    
-  def construct_function(self,functions_tuple, var):
-      
-    result = var  # Start with the input variable
-    text1 = ''  # Initialize text1 as an empty string
-    text2 = ''  # Initialize text2 as an empty string
-    
-    for func in functions_tuple:
-        # Check for power function of the form pow(n)
-        if func.startswith('pow'):
-            # Extract the power value inside parentheses
-            power_value = int(re.search(r'pow\((\d+)\)', func).group(1))
-            result = result ** power_value  # Use ** for power operation
-            text2 = f")**{power_value}" + text2
-            text1 = "(" + text1
-        # Check if the function has a negative sign
-        elif func.startswith('-'):
-            func_name = func[1:]  # Remove the negative sign
-            result = -getattr(torch, func_name)(result)  # Apply the function with a negative sign
-            text1 = f"-{getattr(torch, func_name).__name__}(" + text1
-            text2 = ")" + text2
-        else:
-            result = getattr(torch, func)(result)  # Apply the function normally
-            text1 = f"{getattr(torch, func).__name__}(" + text1
-            text2 = ")" + text2
-
-    return result, text1, text2  
+        return df_screening1  
 
 
   def single_variable(self,operators_set,i):
@@ -177,21 +151,25 @@ class feature_space_construction:
     
     if len(operators_set)==0 and self.custom_unary_functions!=None:
         
-        for func in self.custom_unary_functions:
+        self.feature_values_11 = torch.empty(self.df.shape[0],0).to(self.device)
             
-            self.feature_values_11 = torch.empty(self.df.shape[0],0).to(self.device)
+        feature_names_12 =[]
+        
+        applier = unary_construction.FunctionApplier()
+        
+        self.feature_values_11, text_representations = applier.construct_function(self.custom_unary_functions, self.df_feature_values)
+        
+        for i in range(len(text_representations)):
             
-            feature_names_12 =[]
+            feature_names_12.extend(list(map(lambda x: str(text_representations[i][0]) +x + str(text_representations[i][1]), self.columns)))
             
-            self.feature_values_11,t1,t2 = self.construct_function(func,self.df_feature_values)
+        self.feature_values_unary = torch.cat((self.feature_values_unary,self.feature_values_11),dim=1)
             
-            feature_names_12.extend(list(map(lambda x: str(t1) +x + str(t2), self.columns)))
-            
-            self.feature_values_unary = torch.cat((self.feature_values_unary,self.feature_values_11),dim=1)
-            
-            self.feature_names_unary.extend(feature_names_12)
-
-            del self.feature_values_11, feature_names_12
+        self.feature_names_unary.extend(feature_names_12)
+        
+        del self.feature_values_11, feature_names_12
+    
+    
 
     for op in operators_set:
 
@@ -199,6 +177,15 @@ class feature_space_construction:
         feature_names_12 =[]
 
         # Performs the exponential transformation of the given feature space
+        
+        if self.custom_unary_functions!=None:
+
+            applier = unary_construction.FunctionApplier()
+            self.feature_values_11, text_representations = applier.construct_function(self.custom_unary_functions, self.df_feature_values)
+            
+            for i in range(len(text_representations)):
+                feature_names_12.extend(list(map(lambda x: str(text_representations[i][0]) +x + str(text_representations[i][1]), self.columns)))
+                
         if op == 'exp':
             exp = torch.exp(self.df_feature_values)
             self.feature_values_11 = torch.cat((self.feature_values_11,exp),dim=1)
@@ -229,7 +216,7 @@ class feature_space_construction:
             
             transformation = torch.pow(self.df_feature_values,op)
             self.feature_values_11 = torch.cat((self.feature_values_11,transformation),dim=1)
-            feature_names_12.extend(list(map(lambda x: '('+x + f")^{matches[0]}", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '('+x + f")**{matches[0]}", self.columns)))
 
         # Performs the sine function transformation of the given feature space
         elif op =='sin':
@@ -241,7 +228,7 @@ class feature_space_construction:
         elif op =='sinh':
             sin = torch.sinh(self.df_feature_values)
             self.feature_values_11 = torch.cat((self.feature_values_11,sin),dim=1)
-            feature_names_12.extend(list(map(lambda x: '(sin('+x + "))", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '(sinh('+x + "))", self.columns)))
 
         # Performs the cosine transformation of the given feature space
         elif op =='cos':
@@ -253,26 +240,26 @@ class feature_space_construction:
         elif op =='cosh':
             cos = torch.cosh(self.df_feature_values)
             self.feature_values_11 = torch.cat((self.feature_values_11,cos),dim=1)
-            feature_names_12.extend(list(map(lambda x: '(cos('+x + "))", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '(cosh('+x + "))", self.columns)))
 
         # Performs the hyperbolic tan transformation of the given feature space
         elif op =='tanh':
             cos = torch.tanh(self.df_feature_values)
             self.feature_values_11 = torch.cat((self.feature_values_11,cos),dim=1)
-            feature_names_12.extend(list(map(lambda x: '(cos('+x + "))", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '(tanh('+x + "))", self.columns)))
             
         # Performs the Inverse transformation of the given feature space
         elif op =='^-1':
             reciprocal = torch.reciprocal(self.df_feature_values)
             self.feature_values_11 = torch.cat((self.feature_values_11,reciprocal),dim=1)
-            feature_names_12.extend(list(map(lambda x: '(('+x + ")^(-1))", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '(('+x + ")**(-1))", self.columns)))
 
         # Performs the Inverse exponential transformation of the given feature space
         elif op =='exp(-1)':
             exp = torch.exp(self.df_feature_values)
             expreciprocal = torch.reciprocal(exp)
             self.feature_values_11 = torch.cat((self.feature_values_11,expreciprocal),dim=1)
-            feature_names_12.extend(list(map(lambda x: '(exp('+x + ")^(-1))", self.columns)))
+            feature_names_12.extend(list(map(lambda x: '(exp(-'+x + "))", self.columns)))
             
         elif op =='+1':
             add1 = self.df_feature_values + 1
@@ -289,14 +276,7 @@ class feature_space_construction:
             self.feature_values_11 = torch.cat((self.feature_values_11,div2),dim=1)
             feature_names_12.extend(list(map(lambda x: '('+x + "/2)", self.columns)))
             
-        elif self.custom_unary_functions!=None:
-            
-            for func in self.custom_functions:
-                
-                
-                self.feature_values_11,t1,t2 = self.construct_function(func,self.df_feature_values_11)
-                
-                feature_names_12.extend(list(map(lambda x: str(t1) +x + str(t2), self.columns)))
+        
         
 
         self.feature_values_unary = torch.cat((self.feature_values_unary,self.feature_values_11),dim=1)
@@ -358,7 +338,7 @@ class feature_space_construction:
           self.feature_values11 = torch.empty(self.df.shape[0],0).to(self.device)
           feature_names_11 = []
           
-          constructor = FeatureConstructor(self.df_feature_values, self.columns)
+          constructor = combinations_construction.FeatureConstructor(self.df_feature_values, self.columns)
           
           results, expressions = constructor.construct_generic_features(self.custom_binary_functions)
           self.feature_values11 = torch.cat((self.feature_values11,results),dim=1)
@@ -416,7 +396,7 @@ class feature_space_construction:
         
           elif self.custom_binary_functions!=None:
               
-              constructor = FeatureConstructor(self.df_feature_values, self.columns)
+              constructor = combinations_construction.FeatureConstructor(self.df_feature_values, self.columns)
               
               results, expressions = constructor.construct_generic_features(self.custom_binary_functions)
               self.feature_values11 = torch.cat((self.feature_values11,results),dim=1)
